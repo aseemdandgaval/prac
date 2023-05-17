@@ -1,0 +1,97 @@
+import pandas as pd
+import numpy as np
+import seaborn as sns
+import tensorflow as tf
+import sklearn as sk
+import matplotlib.pyplot as plt
+
+df = pd.read_csv('trainset.csv')
+df.head()
+df.isnull().sum()
+
+
+train_set = df.iloc[:, 1:2].values
+train_set
+
+import sklearn 
+from sklearn.preprocessing import MinMaxScaler
+
+scaler = MinMaxScaler(feature_range=(0,1))
+train_scaled = scaler.fit_transform(train_set)
+train_scaled
+
+X_train = []
+y_train = []
+
+for i in range(60,len(train_set)):
+    X_train.append(train_scaled[i-60:i, 0])
+    y_train.append(train_scaled[i, 0])  
+
+X_train = np.array(X_train)
+y_train = np.array(y_train)
+
+print(X_train)
+print(y_train)
+X_train.shape
+
+X_train = np.reshape(X_train, (X_train.shape[0], X_train.shape[1], 1))
+X_train.shape
+
+
+import keras
+from keras.models import Sequential
+from keras.layers import Activation, Dropout, Dense, LSTM
+
+model = Sequential()
+
+model.add(LSTM(units=50, return_sequences=True, input_shape=(X_train.shape[1], 1)))
+model.add(Dropout(rate=0.2))
+model.add(LSTM(50, return_sequences=True))
+model.add(Dropout(rate=0.2))
+model.add(LSTM(50, return_sequences=True))
+model.add(Dropout(rate=0.2))
+model.add(LSTM(50))
+model.add(Dropout(rate=0.2))
+model.add(Dense(1))
+
+model.compile(optimizer='adam', loss='mean_squared_error')
+
+model.fit(X_train ,y_train, epochs=100, batch_size=32)
+
+
+test_set = pd.read_csv('testset.csv')
+
+real_stock_price = test_set.iloc[:,1].values
+
+dataset_total = pd.concat((df['Open'], test_set['Open']), axis=0)
+dataset_total
+
+inputs = dataset_total[len(dataset_total) - len(test_set)-60:].values
+inputs
+
+inputs = inputs.reshape(-1,1)
+inputs
+inputs = scaler.transform(inputs)
+inputs.shape
+
+X_test = []
+
+for i in range(60,185):
+    X_test.append(inputs[i-60:i, 0])
+
+X_test = np.array(X_test)
+X_test = np.reshape(X_test, (X_test.shape[0], X_test.shape[1],1))
+X_test.shape
+
+predicted_price = model.predict(X_test)
+predicted_price = scaler.inverse_transform(predicted_price)
+predicted_price
+predicted_price.shape
+
+plt.plot(real_stock_price,color = 'red', label = 'Real Price')
+plt.plot(predicted_price, color = 'blue', label = 'Predicted Price')
+plt.title('Google Stock Price Prediction')
+plt.xlabel('Time')
+plt.ylabel('Google Stock Price')
+plt.legend()
+plt.show()

@@ -1,0 +1,84 @@
+import pandas as pd
+import numpy as np
+import seaborn as sns
+import tensorflow as tf
+import sklearn as sk
+import matplotlib.pyplot as plt
+
+
+df = pd.read_csv('housing.csv')
+df.head()
+column_names = ['CRIM', 'ZN', 'INDUS', 'CHAS', 'NOX', 'RM', 'AGE', 'DIS', 'RAD', 'TAX', 'PTRATIO', 'B', 'LSTAT', 'PRICE']
+df = pd.read_csv('housing.csv', header=None, delimiter=r"\s+",names=column_names)
+df.head()
+
+
+df.info()
+df.shape
+df.describe()
+df.isnull().sum()
+
+
+sns.histplot(df.PRICE)
+sns.boxplot(df.PRICE)
+
+
+plt.figure(figsize=(15,12))
+correlation = df.corr()
+matrix = np.triu(df.corr())
+sns.heatmap(correlation, mask=matrix, annot=True, cmap='Greens')
+
+
+x = df.iloc[:, :-1].values
+y = df.iloc[:, -1].values
+print(x)
+print(y)
+
+from sklearn.model_selection import train_test_split
+X_train, X_test, y_train, y_test = train_test_split(x, y, test_size=0.25, random_state=42)
+print(X_train)
+print(X_test)
+print(y_train)
+print(y_test)
+
+
+from sklearn.preprocessing import StandardScaler
+std = StandardScaler()
+X_train = std.fit_transform(X_train)
+X_test = std.fit_transform(X_test)
+
+
+from sklearn.linear_model import LinearRegression
+model = LinearRegression()
+model.fit(X_train, y_train)
+
+from sklearn.metrics import r2_score, mean_squared_error
+y_preds = model.predict(X_test)
+rmse = np.sqrt(mean_squared_error(y_test,y_preds))
+r2 = r2_score(y_test,y_preds)
+print(rmse)
+print(r2)
+
+
+import keras
+from keras.layers import Dense, Activation, Dropout
+from keras.models import Sequential
+
+model = Sequential()
+
+model.add(Dense(128, activation='relu', input_dim=13))
+model.add(Dense(64, activation='relu'))
+model.add(Dense(32, activation='relu'))
+model.add(Dense(16, activation='relu'))
+model.add(Dense(1))
+
+model.compile(optimizer='adam', loss='mean_squared_error')
+
+model.fit(X_train, y_train, epochs=100)
+
+y_preds = model.predict(X_test)
+rmse = np.sqrt(mean_squared_error(y_test,y_preds))
+r2 = r2_score(y_test,y_preds)
+
+print(rmse)
+print(r2)
